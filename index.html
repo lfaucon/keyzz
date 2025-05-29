@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Interval Practice</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .question-container {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .answer-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            font-size: 20px;
+            padding: 10px;
+            width: 100px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .feedback {
+            text-align: center;
+            font-size: 20px;
+            margin-top: 20px;
+            min-height: 30px;
+        }
+        .correct {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .incorrect {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .stat-box {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Music Interval Practice</h1>
+        
+        <div class="question-container" id="question">
+            What is the <b><span id="interval">?</span></b> of <b><span id="key">?</span></b>?
+        </div>
+        
+        <div class="answer-container">
+            <input type="text" id="answer" placeholder="Note" autocomplete="off">
+            <button id="submit-button">Next Question</button>
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="correct-count">0</div>
+                <div class="stat-label">Correct</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Music theory data
+        const notes = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+        const nameHelpers = {
+            'C#': 'Db',
+            'D#': 'Eb',
+            'F#': 'Gb',
+            'G#': 'Ab',
+            'A#': 'Bb',
+            'Db': 'C#',
+            'Eb': 'D#',
+            'Gb': 'F#',
+            'Ab': 'G#',
+            'Bb': 'A#',
+        }
+        const enharmonicEquivalents = {
+            ...nameHelpers,
+            'E#': 'F',
+            'Fb': 'E',
+            'B#': 'C',
+            'Cb': 'B'
+        };
+        
+        const intervals = {
+            '2nd': 2,
+            '3rd': 4,
+            '4th': 5,
+            'diminished 5th': 6,
+            'tritone': 6,
+            '5th': 7,
+            'augmented 5th': 8,
+            '6th': 9,
+            '7th': 10,
+            'major 7th': 11,
+            'octave': 12,
+            '9th': 14,
+            '11th': 5,
+            '13th': 21
+        };
+        
+        // Game state
+        let currentKey;
+        let currentInterval;
+        let correctAnswer;
+        let stats = {
+            correct: 0,
+            total: 0
+        };
+        let isAnswered = false;
+        
+        // DOM elements
+        const questionElement = document.getElementById('question');
+        const keyElement = document.getElementById('key');
+        const intervalElement = document.getElementById('interval');
+        const answerInput = document.getElementById('answer');
+        const feedbackElement = document.getElementById('feedback');
+        const correctCountElement = document.getElementById('correct-count');
+        const totalCountElement = document.getElementById('total-count');
+        const accuracyElement = document.getElementById('accuracy');
+        const submitButton = document.getElementById('submit-button')
+        
+        function displayNote(n) {
+            return nameHelpers[n] ? `${n} (or ${enharmonicEquivalents[n]})`: n
+        }
+        
+        // Generate a random question
+        function generateQuestion() {
+            // Clear previous feedback and answer
+            feedbackElement.textContent = '';
+            feedbackElement.className = 'feedback';
+            answerInput.value = '';
+            
+            // Generate random key and interval
+            currentKey = notes[Math.floor(Math.random() * notes.length)];
+            const intervalNames = Object.keys(intervals);
+            const intervalName = intervalNames[Math.floor(Math.random() * intervalNames.length)];
+            currentInterval = intervalName;
+            
+            // Calculate correct answer
+            const keyIndex = notes.indexOf(currentKey);
+            const semitones = intervals[intervalName];
+            const answerIndex = (keyIndex + semitones) % 12;
+            correctAnswer = notes[answerIndex];
+            
+            // Update the question display
+            keyElement.textContent = displayNote(currentKey);
+            intervalElement.textContent = intervalName;
+            submitButton.textContent = "Check Answer"
+            answerInput.disabled = false
+
+            // Focus on the answer input
+            answerInput.focus();
+            isAnswered = false
+        }
+
+        // Check if the answer is correct
+        function checkAnswer() {
+            const userAnswer = answerInput.value.trim();
+            
+            if (userAnswer === '') {
+                return;
+            }
+            
+            stats.total++;
+            
+            // Check if the answer is correct
+            const isCorrect = userAnswer === correctAnswer || userAnswer == enharmonicEquivalents[correctAnswer];
+            
+            if (isCorrect) {
+                stats.correct++;
+                feedbackElement.textContent = 'Correct!';
+                feedbackElement.className = 'feedback correct';
+            } else {
+                feedbackElement.textContent = `Incorrect. The correct answer is ${displayNote(correctAnswer)}.`;
+                feedbackElement.className = 'feedback incorrect';
+            }
+            
+            // Update stats
+            correctCountElement.textContent = stats.correct;
+            totalCountElement.textContent = stats.total;
+            accuracyElement.textContent = Math.round((stats.correct / stats.total) * 100) + '%';
+            submitButton.textContent = "Next Question"
+            isAnswered = true
+            answerInput.disabled = true
+            submitButton.focus();
+        }
+        
+        // Event listeners
+        function submit() {
+            if (isAnswered) {
+                generateQuestion();
+            } else {
+                checkAnswer();
+            }
+        }
+        document.getElementById('submit-button').addEventListener('click', submit);
+        
+        // Allow pressing Enter to check answer
+        answerInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                submit()
+            }
+        });
+        
+        generateQuestion();
+    </script>
+</body>
+</html>
