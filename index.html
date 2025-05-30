@@ -3,46 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Interval Practice</title>
+    <title>Keyzz</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 4px;
             background-color: #f5f5f5;
             color: #333;
         }
         .container {
             background-color: white;
             border-radius: 10px;
-            padding: 30px;
+            padding: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         h1 {
             color: #2c3e50;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 16px;
         }
         .question-container {
             font-size: 24px;
             text-align: center;
             margin-bottom: 30px;
             padding: 20px;
-            background-color: #f8f9fa;
+            background-color: #f0f0f0;
             border-radius: 8px;
         }
         .answer-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 16px;
         }
-        input[type="text"] {
-            font-size: 20px;
-            padding: 10px;
-            width: 100px;
+        #answer {
+            width: 42%;
+            padding: 0px;
+            margin: 0px;
+            font-size: 24px;
             text-align: center;
             border: 2px solid #ddd;
             border-radius: 5px;
+        }
+        #submit-button {
+            flex-basis: 1px;
+            flex-grow: 1;
+            flex-shrink: 1;
+            height: 100%;
+            font-size: 24px;
+            padding: 10px 0px;
+            margin: 0px;
+        }
+        .note-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .note-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 4px 0px;
+            margin: 0px;
+            flex: 30%;
+            font-size: 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .note-button:hover {
+            background-color: #2980b9;
+        }
+        .note-button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
         }
         button {
             background-color: #3498db;
@@ -95,7 +134,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Music Interval Practice</h1>
+        <h1>Keyzz</h1>
         
         <div class="question-container" id="question">
             What is the <b><span id="interval">?</span></b> of <b><span id="key">?</span></b>?
@@ -104,6 +143,10 @@
         <div class="answer-container">
             <input type="text" id="answer" placeholder="Note" autocomplete="off">
             <button id="submit-button">Next Question</button>
+        </div>
+        
+        <div class="note-buttons" id="note-buttons">
+            <!-- Note buttons will be added here by JavaScript -->
         </div>
         
         <div class="feedback" id="feedback"></div>
@@ -185,6 +228,10 @@
         const accuracyElement = document.getElementById('accuracy');
         const submitButton = document.getElementById('submit-button')
         
+        function capitalizeFirstLetter(val) {
+            return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+        }
+
         function displayNote(n) {
             return nameHelpers[n] ? `${n} (or ${enharmonicEquivalents[n]})`: n
         }
@@ -213,6 +260,9 @@
             intervalElement.textContent = intervalName;
             submitButton.textContent = "Check Answer"
             answerInput.disabled = false
+            
+            // Enable all note buttons
+            enableNoteButtons();
 
             // Focus on the answer input
             answerInput.focus();
@@ -221,7 +271,7 @@
 
         // Check if the answer is correct
         function checkAnswer() {
-            const userAnswer = answerInput.value.trim();
+            const userAnswer = capitalizeFirstLetter(answerInput.value.trim());
             
             if (userAnswer === '') {
                 return;
@@ -248,7 +298,44 @@
             submitButton.textContent = "Next Question"
             isAnswered = true
             answerInput.disabled = true
+            
+            // Disable all note buttons
+            disableNoteButtons();
+            
             submitButton.focus();
+        }
+        
+        // Create note buttons
+        function createNoteButtons() {
+            const noteButtonsContainer = document.getElementById('note-buttons');
+            const allNotes = ['Ab', 'A', 'A#', 'Bb', 'B', 'B#', 'Cb', 'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'E#', 'Fb', 'F', 'F#', 'Gb', 'G', 'G#'];
+            
+            allNotes.forEach(note => {
+                const button = document.createElement('button');
+                button.textContent = note;
+                button.className = 'note-button';
+                button.addEventListener('click', () => {
+                    answerInput.value = note;
+                    checkAnswer();
+                });
+                noteButtonsContainer.appendChild(button);
+            });
+        }
+        
+        // Enable all note buttons
+        function enableNoteButtons() {
+            const buttons = document.querySelectorAll('.note-button');
+            buttons.forEach(button => {
+                button.disabled = false;
+            });
+        }
+        
+        // Disable all note buttons
+        function disableNoteButtons() {
+            const buttons = document.querySelectorAll('.note-button');
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
         }
         
         // Event listeners
@@ -268,6 +355,8 @@
             }
         });
         
+        // Initialize the app
+        createNoteButtons();
         generateQuestion();
     </script>
 </body>
