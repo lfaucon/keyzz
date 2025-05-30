@@ -220,6 +220,12 @@
             total: 0
         };
         let isAnswered = false;
+
+        // Check if run on mobile to avoid focusing the text input
+        // Source: https://www.geeksforgeeks.org/how-to-detect-whether-the-website-is-being-opened-in-a-mobile-device-or-a-desktop-in-javascript/
+        let details = navigator.userAgent;
+        let regexp = /android|iphone|kindle|ipad/i;
+        let isMobileDevice = regexp.test(details);
         
         // DOM elements
         const questionElement = document.getElementById('question');
@@ -269,7 +275,7 @@
             enableNoteButtons();
 
             // Focus on the answer input
-            answerInput.focus();
+            if (!isMobileDevice) { answerInput.focus() }
             isAnswered = false
         }
 
