@@ -187,7 +187,11 @@
             'E#': 'F',
             'Fb': 'E',
             'B#': 'C',
-            'Cb': 'B'
+            'Cb': 'B',
+            'F': 'E#',
+            'E': 'Fb',
+            'C': 'B#',
+            'B': 'Cb',
         };
         
         const intervals = {
@@ -280,7 +284,7 @@
             stats.total++;
             
             // Check if the answer is correct
-            const isCorrect = userAnswer === correctAnswer || userAnswer == enharmonicEquivalents[correctAnswer];
+            const isCorrect = userAnswer === correctAnswer || enharmonicEquivalents[userAnswer] == correctAnswer;
             
             if (isCorrect) {
                 stats.correct++;
