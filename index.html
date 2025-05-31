@@ -130,39 +130,112 @@
             font-size: 14px;
             color: #7f8c8d;
         }
+        .screen {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        .mode-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 30px 0;
+        }
+        .mode-button {
+            padding: 16px;
+            font-size: 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .mode-button:hover {
+            background-color: #2980b9;
+        }
+        .timer {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 16px;
+        }
+        .game-over-container {
+            text-align: center;
+            padding: 20px;
+        }
+        .final-score {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+        .play-again-button {
+            margin-top: 20px;
+            padding: 16px 32px;
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Keyzz</h1>
         
-        <div class="question-container" id="question">
-            What is the <b><span id="interval">?</span></b> of <b><span id="key">?</span></b>?
-        </div>
-        
-        <div class="answer-container">
-            <input type="text" id="answer" placeholder="Note" autocomplete="off">
-            <button id="submit-button">Next Question</button>
-        </div>
-        
-        <div class="note-buttons" id="note-buttons">
-            <!-- Note buttons will be added here by JavaScript -->
-        </div>
-        
-        <div class="feedback" id="feedback"></div>
-        
-        <div class="stats">
-            <div class="stat-box">
-                <div class="stat-value" id="correct-count">0</div>
-                <div class="stat-label">Correct</div>
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active">
+            <div class="mode-buttons">
+                <button class="mode-button" id="unlimited-mode">Unlimited Mode</button>
+                <button class="mode-button" id="one-minute-mode">1 Minute Mode</button>
+                <button class="mode-button" id="two-minute-mode">2 Minutes Mode</button>
             </div>
-            <div class="stat-box">
-                <div class="stat-value" id="total-count">0</div>
-                <div class="stat-label">Total</div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div id="timer-display" class="timer"></div>
+            
+            <div class="question-container" id="question">
+                What is the <b><span id="interval">?</span></b> of <b><span id="key">?</span></b>?
             </div>
-            <div class="stat-box">
-                <div class="stat-value" id="accuracy">0%</div>
-                <div class="stat-label">Accuracy</div>
+            
+            <div class="answer-container">
+                <input type="text" id="answer" placeholder="Note" autocomplete="off">
+                <button id="submit-button">Next Question</button>
+            </div>
+            
+            <div class="note-buttons" id="note-buttons">
+                <!-- Note buttons will be added here by JavaScript -->
+            </div>
+            
+            <div class="feedback" id="feedback"></div>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="correct-count">0</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="accuracy">0%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <div class="game-over-container">
+                <h2>Game Over!</h2>
+                <div class="final-score">
+                    <div>Score: <span id="final-score">0</span></div>
+                    <div>Accuracy: <span id="final-accuracy">0%</span></div>
+                </div>
+                <button class="play-again-button" id="back-to-start">Back to Start</button>
             </div>
         </div>
     </div>
@@ -220,6 +293,9 @@
             total: 0
         };
         let isAnswered = false;
+        let gameMode = 'unlimited';
+        let timerInterval;
+        let timeRemaining = 0;
 
         // Check if run on mobile to avoid focusing the text input
         // Source: https://www.geeksforgeeks.org/how-to-detect-whether-the-website-is-being-opened-in-a-mobile-device-or-a-desktop-in-javascript/
@@ -228,6 +304,10 @@
         let isMobileDevice = regexp.test(details);
         
         // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const timerDisplay = document.getElementById('timer-display');
         const questionElement = document.getElementById('question');
         const keyElement = document.getElementById('key');
         const intervalElement = document.getElementById('interval');
@@ -236,7 +316,15 @@
         const correctCountElement = document.getElementById('correct-count');
         const totalCountElement = document.getElementById('total-count');
         const accuracyElement = document.getElementById('accuracy');
-        const submitButton = document.getElementById('submit-button')
+        const submitButton = document.getElementById('submit-button');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalAccuracyElement = document.getElementById('final-accuracy');
+        
+        // Mode selection buttons
+        document.getElementById('unlimited-mode').addEventListener('click', () => startGame('unlimited'));
+        document.getElementById('one-minute-mode').addEventListener('click', () => startGame('one-minute'));
+        document.getElementById('two-minute-mode').addEventListener('click', () => startGame('two-minute'));
+        document.getElementById('back-to-start').addEventListener('click', goToStartScreen);
         
         function capitalizeFirstLetter(val) {
             return String(val).charAt(0).toUpperCase() + String(val).slice(1);
@@ -244,6 +332,86 @@
 
         function displayNote(n) {
             return nameHelpers[n] ? `${n} (or ${enharmonicEquivalents[n]})`: n
+        }
+        
+        // Show a specific screen
+        function showScreen(screen) {
+            startScreen.classList.remove('active');
+            gameScreen.classList.remove('active');
+            gameOverScreen.classList.remove('active');
+            
+            screen.classList.add('active');
+        }
+        
+        // Start a new game
+        function startGame(mode) {
+            gameMode = mode;
+            stats.correct = 0;
+            stats.total = 0;
+            
+            // Update stats display
+            correctCountElement.textContent = stats.correct;
+            totalCountElement.textContent = stats.total;
+            accuracyElement.textContent = '0%';
+            
+            // Show game screen
+            showScreen(gameScreen);
+            
+            // Set up timer if needed
+            if (mode === 'one-minute') {
+                timeRemaining = 60;
+                startTimer();
+            } else if (mode === 'two-minute') {
+                timeRemaining = 120;
+                startTimer();
+            } else {
+                timerDisplay.style.display = 'none';
+            }
+            
+            // Generate first question
+            generateQuestion();
+        }
+        
+        // Start the timer
+        function startTimer() {
+            timerDisplay.style.display = 'block';
+            updateTimerDisplay();
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateTimerDisplay();
+                
+                if (timeRemaining <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+        
+        // Update the timer display
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+        
+        // End the game
+        function endGame() {
+            clearInterval(timerInterval);
+            
+            // Update final score
+            finalScoreElement.textContent = stats.correct;
+            finalAccuracyElement.textContent = stats.total > 0 ? 
+                Math.round((stats.correct / stats.total) * 100) + '%' : '0%';
+            
+            // Show game over screen
+            showScreen(gameOverScreen);
+        }
+        
+        // Go back to start screen
+        function goToStartScreen() {
+            clearInterval(timerInterval);
+            showScreen(startScreen);
         }
         
         // Generate a random question
@@ -367,7 +535,6 @@
         
         // Initialize the app
         createNoteButtons();
-        generateQuestion();
     </script>
 </body>
 </html>
