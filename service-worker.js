@@ -1,11 +1,11 @@
 const CACHE_NAME = 'keyzz-cache-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/offline.html',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '.',
+  './index.html',
+  './manifest.json',
+  './offline.html',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png'
 ];
 
 // Install service worker and cache assets
@@ -32,7 +32,7 @@ self.addEventListener('fetch', event => {
       .catch(() => {
         // If both cache and network fail, show offline page
         if (event.request.mode === 'navigate') {
-          return caches.match('/offline.html');
+          return caches.match('./offline.html');
         }
       })
   );
